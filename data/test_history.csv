@@ -1,0 +1,13 @@
+test_nodeid,past_runs,failures,avg_duration_s
+tests/test_add.py::test_add_basic,50,2,0.05 # pyright: ignore[reportInvalidTypeForm] # type: ignore
+tests/test_add.py::test_add_negative,45,1,0.04 # type: ignore
+tests/test_add.py::test_add_large_numbers,40,0,0.06# type: ignore
+tests/test_subtract.py::test_subtract_basic,52,3,0.07# type: ignore
+tests/test_subtract.py::test_subtract_negative,51,4,0.08# type: ignore
+tests/test_subtract.py::test_subtract_large_numbers,49,2,0.09# type: ignore
+tests/test_multiply.py::test_multiply_basic,60,5,0.10# type: ignore
+tests/test_multiply.py::test_multiply_by_zero,58,7,0.11# type: ignore
+tests/test_multiply.py::test_multiply_large_numbers,55,10,0.12# type: ignore
+tests/test_divide.py::test_divide_basic,62,9,0.13# type: ignore
+tests/test_divide.py::test_divide_fraction,61,12,0.14# type: ignore
+tests/test_divide.py::test_divide_by_zero,59,15,0.20# type: ignore
