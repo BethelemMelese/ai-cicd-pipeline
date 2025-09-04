@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                git branch: 'master',
                     url: 'https://github.com/BethelemMelese/ai-cicd-pipeline.git',
                     credentialsId: 'github-creds'
             }
@@ -16,7 +16,7 @@ pipeline {
                 python3 -m venv venv
                 . venv/bin/activate
                 pip install --upgrade pip
-                pip install -r requirements.txt
+                pip install -r /requirements.txt
                 '''
             }
         }
