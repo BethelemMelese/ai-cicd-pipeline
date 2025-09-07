@@ -1,5 +1,9 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.12'
+        }
+    }
 
     stages {
         stage('Checkout') {
@@ -14,9 +18,9 @@ pipeline {
             steps {
                 sh '''
                 python -m venv venv
-                . venv/script/activate
+                . venv/bin/activate
                 pip install --upgrade pip
-                pip install -r /requirements.txt
+                pip install -r requirements.txt
                 '''
             }
         }
@@ -32,26 +36,14 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Build stage (placeholder)'
+                echo 'Build stage placeholder'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploy stage (placeholder)'
+                echo 'Deploy stage placeholder'
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline finished'
-        }
-        success {
-            echo 'All stages succeeded'
-        }
-        failure {
-            echo 'Pipeline failed'
         }
     }
 }
