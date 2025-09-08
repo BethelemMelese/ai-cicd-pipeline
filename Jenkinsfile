@@ -1,49 +1,52 @@
 pipeline {
     agent {
         docker {
-            image 'python:3.12'
+            image 'python:3.12'    // Python image to run inside
+            args '-u root:root'    // run as root so pip installs work
         }
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master',
-                    url: 'https://github.com/BethelemMelese/ai-cicd-pipeline.git',
-                    credentialsId: 'github-creds'
+                checkout scm
             }
         }
 
-        stage('Install Dependencies') {
+        stage('Install dependencies') {
             steps {
-                sh '''
-                python -m venv venv
-                . venv/bin/activate
-                pip install --upgrade pip
-                pip install -r requirements.txt
-                '''
+                sh 'pip install --no-cache-dir -r requirements.txt'
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh '''
-                . venv/bin/activate
-                pytest --maxfail=1 --disable-warnings -q
-                '''
+                sh 'pytest --maxfail=1 --disable-warnings -q'
             }
         }
 
         stage('Build') {
             steps {
-                echo 'Build stage placeholder'
+                echo 'Build step placeholder (later can package app or build Docker image)'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploy stage placeholder'
+                echo 'Deploy step placeholder (later can push to Docker Hub or deploy to staging)'
             }
+        }
+    }
+
+    post {
+        always {
+            echo 'Pipeline finished!'
+        }
+        success {
+            echo 'Pipeline succeeded!'
+        }
+        failure {
+            echo 'Pipeline failed!'
         }
     }
 }
