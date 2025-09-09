@@ -1,8 +1,8 @@
 pipeline {
     agent {
         docker {
-            image 'python:3.12'    // Python image to run inside
-            args '-u root:root'    // run as root so pip installs work
+            image 'python:3.12'
+            args '-u root:root'   // run as root inside container so pip installs work
         }
     }
 
@@ -27,13 +27,13 @@ pipeline {
 
         stage('Build') {
             steps {
-                echo 'Build step placeholder (later can package app or build Docker image)'
+                echo 'Build step (later we can package app or build Docker image)'
             }
         }
 
         stage('Deploy') {
             steps {
-                echo 'Deploy step placeholder (later can push to Docker Hub or deploy to staging)'
+                echo 'Deploy step (later we can push to Docker Hub or staging)'
             }
         }
     }
