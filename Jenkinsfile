@@ -79,16 +79,66 @@ pipeline {
             steps {
                 script {
                     if (fileExists('selected_tests.txt')) {
-                        def tests = readFile('selected_tests.txt').trim().split("\\r?\\n")
-                        for (t in tests) {
-                            sh "pytest -k ${t}"
-                        }
+                        sh 'pytest $(cat selected_tests.txt) --junitxml=results.xml'
                     } else {
-                        sh "pytest"
+                        sh 'pytest --junitxml=results.xml'
                     }
                 }
             }
         }
+
+        stage('Update History') {
+            steps {
+                script {
+                    // Parse pytest results and update history
+                    sh '''
+                    python - <<'EOF'
+                    import xml.etree.ElementTree as ET
+                    import pandas as pd
+                    import os
+
+                    history_file = "data/test_history.csv"
+                    results_file = "results.xml"
+
+                    # Load existing history
+                    if os.path.exists(history_file):
+                        df = pd.read_csv(history_file)
+                    else:
+                        df = pd.DataFrame(columns=["test_nodeid","past_runs","failures","avg_duration_s"])
+
+                    # Parse JUnit XML
+                    tree = ET.parse(results_file)
+                    root = tree.getroot()
+
+                    for testcase in root.iter("testcase"):
+                        nodeid = f"{testcase.get('classname')}::{testcase.get('name')}"
+                        duration = float(testcase.get('time', 0))
+                        failed = testcase.find("failure") is not None
+
+                        if nodeid in df["test_nodeid"].values:
+                            row = df.loc[df["test_nodeid"] == nodeid]
+                            df.loc[df["test_nodeid"] == nodeid, "past_runs"] = int(row["past_runs"]) + 1
+                            df.loc[df["test_nodeid"] == nodeid, "failures"] = int(row["failures"]) + (1 if failed else 0)
+                            # update running average
+                            old_avg = float(row["avg_duration_s"])
+                            runs = int(row["past_runs"])
+                            new_avg = (old_avg * (runs - 1) + duration) / runs
+                            df.loc[df["test_nodeid"] == nodeid, "avg_duration_s"] = new_avg
+                        else:
+                            df = pd.concat([df, pd.DataFrame([{
+                                "test_nodeid": nodeid,
+                                "past_runs": 1,
+                                "failures": 1 if failed else 0,
+                                "avg_duration_s": duration
+                            }])])
+
+                    df.to_csv(history_file, index=False)
+                    EOF
+                    '''
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 echo "Building application..."

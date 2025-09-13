@@ -1,29 +1,26 @@
-import pandas as pd
 import os
+import pandas as pd
+
+HISTORY_FILE = "data/test_history.csv"
 
 def select_tests():
-    history_file = "test_history.csv"
-    output_file = "selected_tests.txt"
-
-    if not os.path.exists(history_file):
+    if not os.path.exists(HISTORY_FILE):
         print(":: No test history found, running all tests.")
-        return
+        return []
 
-    try:
-        df = pd.read_csv(history_file)
+    df = pd.read_csv(HISTORY_FILE)
+    failing_tests = df[df["failures"] > 0]["test_nodeid"].tolist()
 
-        # prioritize tests that failed more than once
-        failed_tests = df[df['status'] == 'fail']['test_name'].unique()
-
-        if len(failed_tests) > 0:
-            print(":: Selected failed tests for rerun:", failed_tests)
-            with open(output_file, "w") as f:
-                for test in failed_tests:
-                    f.write(test + "\n")
-        else:
-            print(":: No failed tests, running all tests")
-    except Exception as e:
-        print(":: Error in test selection:", e)
+    if failing_tests:
+        print(f":: Selected failing tests from history: {failing_tests}")
+        return failing_tests
+    else:
+        print(":: No failing tests found, running all tests.")
+        return []
 
 if __name__ == "__main__":
-    select_tests()
+    selected = select_tests()
+    if selected:
+        # Write selected tests into a file so Jenkins can pick them up
+        with open("selected_tests.txt", "w") as f:
+            f.write("\n".join(selected))
