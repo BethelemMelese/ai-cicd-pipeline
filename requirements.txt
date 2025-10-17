@@ -3,4 +3,9 @@ pytest
 pandas
 numpy
 scikit-learn
-
+gitpython
+joblib
+imbalanced-learn
+PyYAML
+requests
+lxml

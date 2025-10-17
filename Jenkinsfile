@@ -170,13 +170,26 @@ pipeline {
 
         stage('Install dependencies') {
             steps {
-                sh 'pip install --no-cache-dir -r requirements.txt'
+                // sh 'pip install --no-cache-dir -r requirements.txt'
+                sh 'python -m pip install -r requirements.txt'
             }
         }
-
+        stage('Prepare dataset & features') {
+            steps {
+                sh 'python ai/generate_dataset.py || true'       // optional: generate synthetic if not present
+                sh 'python ai/feature_engineering.py'
+            }
+        }
+        stage('Train model (optional)') {
+            steps {
+                // comment out this stage after offline training if you prefer
+                sh 'python ai/model_training.py'
+            }
+        }
         stage('AI Test Selector') {
             steps {
-                sh 'python ai_test_selector.py'
+                // sh 'python ai_test_selector.py'
+                 sh 'python ai/ai_test_selector.py --top_k 10'
             }
         }
 
@@ -193,54 +206,61 @@ pipeline {
             }
         }
 
-        stage('Update History') {
+//         stage('Update History') {
+//             steps {
+//                 script {
+//                     sh '''
+//                     python - <<'EOF'
+// import xml.etree.ElementTree as ET
+// import pandas as pd
+// import os
+
+// history_file = "data/test_history.csv"
+// results_file = "results.xml"
+
+// # Load existing history
+// if os.path.exists(history_file):
+//     df = pd.read_csv(history_file)
+// else:
+//     df = pd.DataFrame(columns=["test_nodeid","past_runs","failures","avg_duration_s"])
+
+// # Parse JUnit XML results
+// tree = ET.parse(results_file)
+// root = tree.getroot()
+
+// for testcase in root.iter("testcase"):
+//     nodeid = f"{testcase.get('classname')}::{testcase.get('name')}"
+//     duration = float(testcase.get('time', 0))
+//     failed = testcase.find("failure") is not None
+
+//     if nodeid in df["test_nodeid"].values:
+//         row = df.loc[df["test_nodeid"] == nodeid]
+//         runs = int(row["past_runs"]) + 1
+//         fails = int(row["failures"]) + (1 if failed else 0)
+//         old_avg = float(row["avg_duration_s"])
+//         new_avg = (old_avg * (runs - 1) + duration) / runs
+//         df.loc[df["test_nodeid"] == nodeid, ["past_runs","failures","avg_duration_s"]] = [runs, fails, new_avg]
+//     else:
+//         df = pd.concat([df, pd.DataFrame([{
+//             "test_nodeid": nodeid,
+//             "past_runs": 1,
+//             "failures": 1 if failed else 0,
+//             "avg_duration_s": duration
+//         }])])
+
+// # Save updated history
+// os.makedirs(os.path.dirname(history_file), exist_ok=True)
+// df.to_csv(history_file, index=False)
+// EOF
+//                     '''
+//                 }
+//             }
+//         }
+
+        stage('Update history (feedback)') {
             steps {
-                script {
-                    sh '''
-                    python - <<'EOF'
-import xml.etree.ElementTree as ET
-import pandas as pd
-import os
-
-history_file = "cold_data/test_history.csv"
-results_file = "results.xml"
-
-# Load existing history
-if os.path.exists(history_file):
-    df = pd.read_csv(history_file)
-else:
-    df = pd.DataFrame(columns=["test_nodeid","past_runs","failures","avg_duration_s"])
-
-# Parse JUnit XML results
-tree = ET.parse(results_file)
-root = tree.getroot()
-
-for testcase in root.iter("testcase"):
-    nodeid = f"{testcase.get('classname')}::{testcase.get('name')}"
-    duration = float(testcase.get('time', 0))
-    failed = testcase.find("failure") is not None
-
-    if nodeid in df["test_nodeid"].values:
-        row = df.loc[df["test_nodeid"] == nodeid]
-        runs = int(row["past_runs"]) + 1
-        fails = int(row["failures"]) + (1 if failed else 0)
-        old_avg = float(row["avg_duration_s"])
-        new_avg = (old_avg * (runs - 1) + duration) / runs
-        df.loc[df["test_nodeid"] == nodeid, ["past_runs","failures","avg_duration_s"]] = [runs, fails, new_avg]
-    else:
-        df = pd.concat([df, pd.DataFrame([{
-            "test_nodeid": nodeid,
-            "past_runs": 1,
-            "failures": 1 if failed else 0,
-            "avg_duration_s": duration
-        }])])
-
-# Save updated history
-os.makedirs(os.path.dirname(history_file), exist_ok=True)
-df.to_csv(history_file, index=False)
-EOF
-                    '''
-                }
+                // you can add a script to parse results.xml and append to data/raw_test_history.csv
+                sh 'python ai/update_history.py || true'
             }
         }
 
